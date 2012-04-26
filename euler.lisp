@@ -36,7 +36,7 @@
 (defun euler-problem-3 (n)
   (do ((i 2 (+ i 1))
        (p n (do ((j p (/ j i))) 
-	      ((or (neq (mod j i) 0) (eq j i)) j))))
+	      ((or (/= (mod j i) 0) (eq j i)) j))))
        ((> i (isqrt n)) p)))
 
 
@@ -68,7 +68,7 @@
 (defun divisors(n)
   (do ((i 2 (+ 1 i))
        (l nil (do ((l l (push i l)))
-		  ((neq (mod n i) 0) l)
+		  ((/= (mod n i) 0) l)
 		(setf n (/ n i)))))
       ((eq n 1) l)))
 
@@ -77,13 +77,13 @@
 (defun divisors-all(n)
   (do ((i 2 (+ 1 i))
        (l nil (do ((l l (progn (push i l) (push n l))))
-		  ((neq (mod n i) 0) l)
+		  ((/= (mod n i) 0) l)
 		(setf n (/ n i)))))
       ((eq n 1) l)))
 
 (defun n-divisors(l)
   (do ((i 0 (+ 1 i)))
-      ((or (neq (nth i l) (first l)) (not l))
+      ((or (/= (nth i l) (first l)) (not l))
        (if (< i (list-length l)) 
 	   (append (list i) (n-divisors (nthcdr i l))) 
 	   (list i)))))
@@ -92,7 +92,7 @@
 (defun nlist-divisors(l)
   (if (not l) '()
       (do ((i 0 (+ 1 i)))
-	  ((neq (nth i l) (nth (1+ i) l)) 
+	  ((/= (nth i l) (nth (1+ i) l)) 
 	   (nconc (list (subseq l 0 (1+ i))) 
 		  (nlist-divisors (subseq l (1+ i))))))))
 
@@ -105,34 +105,6 @@
 	(progn (format t "~d ~a~%" pr s)
 	     (append (nconc (list pr) (proper-divisors (rest l))) res)))))
     
-(defun proper-divisors2(l)
-  (if (not l) nil
-      (mapcan #'(lambda(x) 
-		  ;(do* ((s 1 (* s (nth i x)))
-	;		(i 0 (+ i 1))
-;			(res '()))
-;		       ((= i (list-length x)) (progn (format t "~a ~%" res) res))
-;		    (setf res (append (cons s (proper-divisors2 (remove x l))) res))))
-;	      l)))
-
-		  (do* ((s 1 (* s (nth i x)))
-		       (i 0 (+ i 1))
-			(res '() (cons s (proper-divisors2 (remove x l))) res))
-			((= i (list-length x)) (progn (format t "~d ~a ~a~%" s x res) res))))
-;		  (mapcan #'(lambda(y) 
-;			      (nconc 
-;			       (list (reduce #'* y))
-;			       (proper-divisors2 (remove x l))))
-;			  (mapcon #'list x)))
-	      l)))
-		  ;(reduce #'(lambda(y z) (format t "~a~%" l) (append (list (* y z)) (proper-divisors2 (remove x l)))) x))  l)))
-
-;; for (x y z) returns (x+1)*(y+1)*(z+1) 
-;      (mapcan #'(lambda(x) 
-;		  (mapcar #'(lambda(y)
-;			      (nconc (reduce #'* y) (proper-divisors3 (remove x l)) )) (append '((1)) (mapcon #'list x)))) l)))
-		; (mapcan #'(lambda(y) (cons y (proper-divisors3 (remove x l)))) x)) l)))
-
 
 (defun list-product(l)
   (if (first l) (* (+ (first l) 1) (list-product (rest l))) 1))
@@ -679,9 +651,85 @@ stopped."
                             ;(progn (format t "~a~%" (remove element list)) 
 			   (all-permutations (remove element list)))))))
 
-(defun proper-divisors3(l)
-  (if (null l) '()
-      (mapcar #'(lambda (x) 
-		  (mapcan #'(lambda(xx) 
-			      (mapcan #'(lambda (y) (cons xx y)) 
-				      (p (remove x l :count 1)))) x)) l)))
+(defun n-proper-divs (N)
+       (do ( (i 1 (1+ i))
+       	     (l '() (if (= (mod N i) 0)
+		    	 (append (list i) l) l)))
+	    ((> i (/ N 2)) l) ))
+
+(defun sump(L)
+       (if (null L) 0
+       	     	    (+ (car L) (sump (rest L)))))
+
+(defun amicable(X)
+       (do (  (i 1 (1+ i))
+              (a1  0 (sump (n-proper-divs i))   )
+	      (a2  0 (sump (n-proper-divs a1))  )
+	      (s 0) 
+	      )
+           ((> a1 X) s)
+	     (if  (= a2 i)
+	     	 (setf s (+ s i a2))
+		 s)))
+;;;           (if (= (sump (n-proper-divs (sump (n-proper-divs i)))) i)
+;;; 	       (format t "~d~%" i)
+;;;	       nil)))
+;;;	   (format t "~d ~d ~d~%" i a1 a2)))
+
+
+ (defun abundantp(n)
+ 	(> (sump (n-proper-divs n)) n))
+
+ (defun list-abundant()
+ 	(do ((i 1 (1+ i))
+	    (l '() (if (abundantp i)
+	       	       (push i l)
+		       l)))
+            ((> i 28123) l)))
+
+ (defun n-sum-two-abundantp(n abl)
+ 	(dolist (e1 abl)
+		(dolist (e2 abl)
+			(if (= (+ e1 e2) n)
+			    (return-from n-sum-two-abundantp t)
+			    (if (and (> e1 n) (> e2 n))
+			    	(return-from n-sum-two-abundantp nil))))))
+			    
+			
+ (defun euler-problem23()
+	(do ((l (reverse (list-abundant)))
+	      (i 1 (1+ i))
+	      (r '() (if (n-sum-two-abundantp i l)
+	      	     r
+	      	     (push i r))))
+            ((> i 28123) (sump r))))
+
+
+(defun find-cyclesp(d n)
+       (if (< (length d) (num-digits n)) nil
+              (search (subseq d 0 (num-digits n)) (subseq d (num-digits n)))))
+       
+(defun n-get-fractions(n)
+       (do ((d '())
+       	    (i 1 (if (< i n)
+       	       	     (progn (if (< (* 10 i) n) (push 0 d)) (* i 10))
+		     (progn (push (floor (/ i n)) d) (mod i n)))))
+           ( (or (= i 0) (find-cyclesp d n)) (if (= i 0) d (subseq d (num-digits n))) )))
+       	       
+       	    
+
+(defun euler-problem26()
+       (do ((i 1 (1+ i))
+       	    (d '() (n-get-fractions i))
+       	    (max-cycle 0 (if (> (length d) max-cycle)
+	    	       	     (progn (format t "number ~d~%" (- i 1)) (length d))
+			     max-cycle)))
+       ( (> i 1000) t)
+         (format t "~d~%" max-cycle)))
+
+(defun n-num-of-2pounds(p coins)
+  (dolist (e coins)
+    (if (> (- p e) 0)
+	(+ (n-num-of-2pounds (- p e) coins))
+	(if (= (- p e) 0) (return 1) (return 0)))))
+	   
